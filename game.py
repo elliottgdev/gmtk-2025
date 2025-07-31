@@ -29,6 +29,9 @@ class Game:
         self.drift_amount = 0
         self.drift_boosts = [90, 180, 260]
 
+        self.boost_ui = pygame.image.load('boost.png').convert()
+        self.boost_ui.set_colorkey((0, 222, 255))
+
         #             accel, decel, left , right, drift, item
         self.input = [False, False, False, False, False, False]
 
@@ -77,7 +80,7 @@ class Game:
                     self.car_vel = -(self.car_speed + 3)
                 elif self.drift_amount > self.drift_boosts[0]:
                     print('smol boost')
-                    self.car_vel = -(self.car_speed + 2)
+                    self.car_vel = -(self.car_speed + 2.3)
 
                 move = 0
                 turn_dir = 0
@@ -160,7 +163,7 @@ class Game:
             car_rect = self.car_rect
             car_rect.x = 340 - 8
             car_rect.y = 180 - 8
-            pygame.draw.rect(self.display, (0, 255, 0), car_img_rect)
+            #pygame.draw.rect(self.display, (0, 255, 0), car_img_rect)
             pygame.draw.rect(self.display, (255, 255, 0), car_rect)
             self.display.blit(car_img, (340 - car_img.get_size()[0] / 2, 180 - car_img.get_size()[1] / 2))
 
@@ -182,6 +185,8 @@ class Game:
                     drift_ui_colour = (100, 100, 100)
 
                 pygame.draw.rect(self.display, drift_ui_colour, drift_ui)
+
+            self.display.blit(self.boost_ui, (25, 25))
 
             screen = pygame.transform.scale(self.display, (640 * self.resolution_scale, 360 * self.resolution_scale))
             self.window.blit(screen, (0, 0))
