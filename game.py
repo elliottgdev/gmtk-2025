@@ -16,8 +16,7 @@ class Game:
         pygame.display.set_caption('trackmorph')
         self.clock = pygame.time.Clock()
 
-        self.track_img = pygame.image.load('test_map.png').convert()
-        self.track_img = pygame.image.load('track.png').convert()
+        self.track_img = [pygame.image.load('track.png').convert(), pygame.image.load('track_lap2.png').convert()]
         self.track_file = open('track.txt', 'r')
 
         readmode = None
@@ -209,7 +208,7 @@ class Game:
 
             car_img = pygame.transform.rotate(self.car_img, -self.car_dir)
 
-            self.display.blit(self.track_img, (-self.car_pos.x + 340, -self.car_pos.y + 180))
+            self.display.blit(self.track_img[self.lap - 1], (-self.car_pos.x + 340, -self.car_pos.y + 180))
             car_img_rect = car_img.get_rect()
             car_img_rect.x = 340 - car_img.get_width() / 2
             car_img_rect.y = 180 - car_img.get_height() / 2
