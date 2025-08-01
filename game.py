@@ -17,17 +17,50 @@ class Game:
         self.clock = pygame.time.Clock()
 
         self.track_img = pygame.image.load('test_map.png').convert()
+        self.track_img = pygame.image.load('track.png').convert()
+        self.track_file = open('track.txt', 'r')
+
+        readmode = None
+        self.checkpoints = list()
+        self.walls = list()
+        for line in self.track_file.readlines():
+            if line.startswith('checkpoints'):
+                readmode = 0
+            elif line.startswith('walls'):
+                readmode = 1
+            elif line.startswith('#'):
+                pass
+            else:
+                if readmode == 0:
+                    line_ = line.split(' ')
+                    point_one = (int(line_[0].strip()), int(line_[1].strip()))
+                    point_two = (int(line_[2].strip()), int(line_[3].strip()))
+                    self.checkpoints.append((point_one, point_two))
+                elif readmode == 1:
+                    line_ = line.split(' ')
+                    point_one = (int(line_[0].strip()), int(line_[1].strip()))
+                    point_two = (int(line_[2].strip()), int(line_[3].strip()))
+                    self.walls.append((point_one, point_two))
+
+        #self.checkpoints = [((422, 1247), (531, 1181)), ((327, 780), (429, 832)), ((1129, 327), (1062, 433)), ((1061, 1003), (1192, 1016)), ((1515, 1177), (1596, 1275)),
+        #                    ((2311, 1069), (2454, 1061)), ((2008, 1497), (2082, 1588)), ((1555, 2175), (1675, 2102)), ((1931, 2492), (2082, 2566)), ((839, 2397), (939, 2279))]
+        self.current_checkpoint = 0
+        self.lap = 1
+        self.time = 0
+        self.displayed_time = 0
+
         self.car_img = pygame.image.load('car.png').convert()
         self.car_img.set_colorkey((0, 222, 255))
 
-        self.car_pos = Vector2(0, 0)
+        self.car_pos = Vector2(509, 1251)
+        self.old_car_pos = Vector2(509, 1251)
         self.car_vel = 0
-        self.car_speed = 5
-        self.car_handle = 2
-        self.car_dir = 0
+        self.car_speed = 4
+        self.car_handle = 1.5
+        self.car_dir = -35
         self.car_rect = pygame.Rect(0, 0, 16, 16)
         self.drift_amount = 0
-        self.drift_boosts = [90, 180, 260]
+        self.drift_boosts = [75, 140, 200]
 
         self.boost_ui = pygame.image.load('boost.png').convert()
         self.boost_ui.set_colorkey((0, 222, 255))
@@ -37,8 +70,17 @@ class Game:
 
     def run(self):
         while True:
+            #timer
+            if self.clock.get_time() > 0 and self.clock.get_fps() > 0:
+                #increment by .016 because the game is locked to 60fps so this should count seconds
+                self.time += .016666666
+                #awful code to make the displayed timer always show the tens digit in seconds, breaks for one frame but i dont care enough to fix
+                if self.time % 60 < 10:
+                    self.displayed_time = f'{int(self.time / 60)}:{f'0{'%.3f'%(self.time % 60)}'}'
+                else:
+                    self.displayed_time = f'{int(self.time / 60)}:{'%.3f'%(self.time % 60)}'
             self.display.fill((0, 0, 0))
-            pygame.display.set_caption(f'trackmorph | fps: {int(self.clock.get_fps())}')
+            pygame.display.set_caption(f'trackmorph | lap {self.lap} | time {self.displayed_time} | fps: {int(self.clock.get_fps())}')
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -73,14 +115,14 @@ class Game:
             #if not drifting // if no direction is held while trying to start drift (give grace if attempting to drift just before selecting direction)
             if not self.input[4] or turn_dir == 0:
                 if self.drift_amount > self.drift_boosts[2]:
-                    print('beeg boost')
+                    #print('beeg boost')
                     self.car_vel = -(self.car_speed + 5)
                 elif self.drift_amount > self.drift_boosts[1]:
-                    print('mid boost')
-                    self.car_vel = -(self.car_speed + 3)
+                    #print('mid boost')
+                    self.car_vel = -(self.car_speed + 3.6)
                 elif self.drift_amount > self.drift_boosts[0]:
-                    print('smol boost')
-                    self.car_vel = -(self.car_speed + 2.3)
+                    #print('smol boost')
+                    self.car_vel = -(self.car_speed + 2.8)
 
                 move = 0
                 turn_dir = 0
@@ -105,9 +147,9 @@ class Game:
                 turn_amount = turn_dir
 
                 if self.input[2]:
-                    turn_amount += 0.3
+                    turn_amount += 0.4
                 if self.input[3]:
-                     turn_amount -= 0.3
+                     turn_amount -= 0.4
 
                 #increase drift bonus depending on how tight the drift is
                 #inside drift
@@ -138,7 +180,7 @@ class Game:
 
             if self.input[5]:
                 self.input[5] = False
-                self.car_vel = -(self.car_speed + 5)
+                self.car_vel = -(self.car_speed + 6)
 
             #cap speed
             #reverse cap
@@ -148,11 +190,22 @@ class Game:
             elif self.car_vel < -self.car_speed:
                 self.car_vel += 0.3
 
-            #move car based on velocity and direction
-            self.car_pos.x -= (self.car_vel * math.sin(math.radians(self.car_dir)))
-            self.car_pos.y += (self.car_vel * math.cos(math.radians(self.car_dir)))
-            self.car_rect.x = self.car_pos.x
-            self.car_rect.y = self.car_pos.y
+            #wall collisions
+            collide = False
+            for wall in self.walls:
+                if self.car_rect.clipline(wall[0], wall[1]):
+                    collide = True
+
+            if collide:
+                self.car_vel = -self.car_vel + (-0 * move)
+                self.car_pos.x -= (self.car_vel * math.sin(math.radians(self.car_dir))) * 2
+                self.car_pos.y += (self.car_vel * math.cos(math.radians(self.car_dir))) * 2
+            else:
+                #move car based on velocity and direction
+                self.car_pos.x -= (self.car_vel * math.sin(math.radians(self.car_dir)))
+                self.car_pos.y += (self.car_vel * math.cos(math.radians(self.car_dir)))
+
+            self.car_rect = pygame.Rect(self.car_pos.x - 8, self.car_pos.y - 8, 16, 16)
 
             car_img = pygame.transform.rotate(self.car_img, -self.car_dir)
 
@@ -160,18 +213,39 @@ class Game:
             car_img_rect = car_img.get_rect()
             car_img_rect.x = 340 - car_img.get_width() / 2
             car_img_rect.y = 180 - car_img.get_height() / 2
-            car_rect = self.car_rect
-            car_rect.x = 340 - 8
-            car_rect.y = 180 - 8
-            #pygame.draw.rect(self.display, (0, 255, 0), car_img_rect)
-            pygame.draw.rect(self.display, (255, 255, 0), car_rect)
+            car_rect = pygame.Rect(340 - 8, 180 - 8, 16, 16)
+
+            check = 0
+            for checkpoint in self.checkpoints:
+                #check for checkpoint collisions
+                if self.car_rect.clipline(checkpoint[0], checkpoint[1]):
+                    #if the checkpoint we hit is 1 bigger than our current checkpoint (or first checkpoint and we on last)
+                    #update our current checkpoint
+                    if check == (self.current_checkpoint + 1) % len(self.checkpoints):
+                        self.current_checkpoint = check
+                        #if we hit the first checkpoint, update the lap
+                        if check == 0:
+                            self.lap += 1
+
+                    #pygame.draw.line(self.display, (255, 0, 255), (-self.car_pos.x + 340 + checkpoint[0][0], - self.car_pos.y + 180 + checkpoint[0][1]), (-self.car_pos.x + 340 + checkpoint[1][0], -self.car_pos.y + 180 + checkpoint[1][1]))
+                #else:
+                #    pygame.draw.line(self.display, (255, 0, 0), (-self.car_pos.x + 340 + checkpoint[0][0], - self.car_pos.y + 180 + checkpoint[0][1]), (-self.car_pos.x + 340 + checkpoint[1][0], -self.car_pos.y + 180 + checkpoint[1][1]))
+                check += 1
+
+            #for wall in self.walls:
+            #    pygame.draw.line(self.display, (0, 0, 255),
+            #                     (-self.car_pos.x + 340 + wall[0][0], - self.car_pos.y + 180 + wall[0][1]),
+            #                     (-self.car_pos.x + 340 + wall[1][0], -self.car_pos.y + 180 + wall[1][1]))
+
+            #pygame.draw.rect(self.display, (0, 255, 0), self.car_rect)
+            #pygame.draw.rect(self.display, (255, 255, 0), car_rect)
             self.display.blit(car_img, (340 - car_img.get_size()[0] / 2, 180 - car_img.get_size()[1] / 2))
 
             #drift ui
             if self.input[4]:
                 drift_ui = pygame.Rect(340 - 30, 180 - 30, 10, 3)
 
-                drift_ui.width = self.drift_amount / 5
+                drift_ui.width = self.drift_amount / 4
                 if drift_ui.width > 60:
                     drift_ui.width = 60
 
@@ -186,7 +260,7 @@ class Game:
 
                 pygame.draw.rect(self.display, drift_ui_colour, drift_ui)
 
-            self.display.blit(self.boost_ui, (25, 25))
+            #self.display.blit(self.boost_ui, (25, 25))
 
             screen = pygame.transform.scale(self.display, (640 * self.resolution_scale, 360 * self.resolution_scale))
             self.window.blit(screen, (0, 0))
