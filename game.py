@@ -20,8 +20,11 @@ class Game:
         self.track_file = open('track.txt', 'r')
 
         readmode = None
+        writing_lap = 0
         self.checkpoints = list()
         self.walls = list()
+        walls = list()
+        checkpoints = list()
         for line in self.track_file.readlines():
             if line.startswith('checkpoints'):
                 readmode = 0
@@ -29,20 +32,29 @@ class Game:
                 readmode = 1
             elif line.startswith('#'):
                 pass
+            elif line.startswith('lap'):
+                writing_lap += 1
+                self.checkpoints.append(checkpoints)
+                self.walls.append(walls)
+                checkpoints = list()
+                walls = list()
             else:
                 if readmode == 0:
                     line_ = line.split(' ')
                     point_one = (int(line_[0].strip()), int(line_[1].strip()))
                     point_two = (int(line_[2].strip()), int(line_[3].strip()))
-                    self.checkpoints.append((point_one, point_two))
+
+                    checkpoints.append((point_one, point_two))
+                    print(writing_lap)
                 elif readmode == 1:
                     line_ = line.split(' ')
                     point_one = (int(line_[0].strip()), int(line_[1].strip()))
                     point_two = (int(line_[2].strip()), int(line_[3].strip()))
-                    self.walls.append((point_one, point_two))
 
-        #self.checkpoints = [((422, 1247), (531, 1181)), ((327, 780), (429, 832)), ((1129, 327), (1062, 433)), ((1061, 1003), (1192, 1016)), ((1515, 1177), (1596, 1275)),
-        #                    ((2311, 1069), (2454, 1061)), ((2008, 1497), (2082, 1588)), ((1555, 2175), (1675, 2102)), ((1931, 2492), (2082, 2566)), ((839, 2397), (939, 2279))]
+                    walls.append((point_one, point_two))
+
+        print(self.walls)
+
         self.current_checkpoint = 0
         self.lap = 1
         self.time = 0
@@ -191,7 +203,7 @@ class Game:
 
             #wall collisions
             collide = False
-            for wall in self.walls:
+            for wall in self.walls[self.lap - 1]:
                 if self.car_rect.clipline(wall[0], wall[1]):
                     collide = True
 
@@ -215,26 +227,26 @@ class Game:
             car_rect = pygame.Rect(340 - 8, 180 - 8, 16, 16)
 
             check = 0
-            for checkpoint in self.checkpoints:
+            for checkpoint in self.checkpoints[self.lap - 1]:
                 #check for checkpoint collisions
                 if self.car_rect.clipline(checkpoint[0], checkpoint[1]):
                     #if the checkpoint we hit is 1 bigger than our current checkpoint (or first checkpoint and we on last)
                     #update our current checkpoint
-                    if check == (self.current_checkpoint + 1) % len(self.checkpoints):
+                    if check == (self.current_checkpoint + 1) % len(self.checkpoints[self.lap - 1]):
                         self.current_checkpoint = check
                         #if we hit the first checkpoint, update the lap
                         if check == 0:
                             self.lap += 1
 
-                    #pygame.draw.line(self.display, (255, 0, 255), (-self.car_pos.x + 340 + checkpoint[0][0], - self.car_pos.y + 180 + checkpoint[0][1]), (-self.car_pos.x + 340 + checkpoint[1][0], -self.car_pos.y + 180 + checkpoint[1][1]))
-                #else:
-                #    pygame.draw.line(self.display, (255, 0, 0), (-self.car_pos.x + 340 + checkpoint[0][0], - self.car_pos.y + 180 + checkpoint[0][1]), (-self.car_pos.x + 340 + checkpoint[1][0], -self.car_pos.y + 180 + checkpoint[1][1]))
+                    pygame.draw.line(self.display, (255, 0, 255), (-self.car_pos.x + 340 + checkpoint[0][0], - self.car_pos.y + 180 + checkpoint[0][1]), (-self.car_pos.x + 340 + checkpoint[1][0], -self.car_pos.y + 180 + checkpoint[1][1]))
+                else:
+                    pygame.draw.line(self.display, (255, 0, 0), (-self.car_pos.x + 340 + checkpoint[0][0], - self.car_pos.y + 180 + checkpoint[0][1]), (-self.car_pos.x + 340 + checkpoint[1][0], -self.car_pos.y + 180 + checkpoint[1][1]))
                 check += 1
 
-            #for wall in self.walls:
-            #    pygame.draw.line(self.display, (0, 0, 255),
-            #                     (-self.car_pos.x + 340 + wall[0][0], - self.car_pos.y + 180 + wall[0][1]),
-            #                     (-self.car_pos.x + 340 + wall[1][0], -self.car_pos.y + 180 + wall[1][1]))
+            for wall in self.walls[self.lap - 1]:
+                pygame.draw.line(self.display, (0, 0, 255),
+                                 (-self.car_pos.x + 340 + wall[0][0], - self.car_pos.y + 180 + wall[0][1]),
+                                 (-self.car_pos.x + 340 + wall[1][0], -self.car_pos.y + 180 + wall[1][1]))
 
             #pygame.draw.rect(self.display, (0, 255, 0), self.car_rect)
             #pygame.draw.rect(self.display, (255, 255, 0), car_rect)
