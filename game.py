@@ -20,8 +20,13 @@ class Game:
         self.track_img = [pygame.image.load('track.png').convert(), pygame.image.load('track_lap2.png').convert()]
         self.track_file = open('track.txt', 'r')
 
-        self.game_state = 'playing'
+        self.menu_background = pygame.image.load('test_map.png').convert()
+        self.selected_menu_option = 0
+        self.menu = 'title'
+
+        self.game_state = 'menu'
         self.animation_tick = 0
+        self.debug = False
 
         readmode = None
         writing_lap = 0
@@ -162,7 +167,7 @@ class Game:
                 else:
                     self.displayed_time = f'{int(self.time / 60)}:{'%.3f'%(self.time % 60)}'
             #self.display.fill((0, 0, 0))
-            pygame.display.set_caption(f'trackmorph | lap {self.lap} | time {self.displayed_time} | fps: {int(self.clock.get_fps())}')
+            pygame.display.set_caption(f'Trackmorph | fps: {int(self.clock.get_fps())}')
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -198,8 +203,75 @@ class Game:
                         self.game_state = 'finished'
                         self.animation_tick = 0
 
+            #menu
+            if self.game_state == 'menu':
+                #scrolling background
+                self.display.blit(self.menu_background, (((self.animation_tick / 2) % 64) * -1, ((self.animation_tick / 2) % 64) * -1))
+
+                #the stuff in the corner
+                self.display.blit(self.small_font.render('Navigate the menu using W, S, and SPACE.', True, (255, 255, 255)), (4, 360 - 36 - 12))
+                self.display.blit(self.small_font.render('Made by elliottgdev (© maybe?) for GMTK Game Jam 2025.', True, (255, 255, 255)), (4, 360 - 24 - 8))
+                self.display.blit(self.small_font.render('Made with pygame-ce.', True, (255, 255, 255)), (4, 360 - 12 - 4))
+
+                #buttons
+                colours = list()
+                for i in range(3):
+                    if i == int(self.selected_menu_option): colours.append((255, 200, 0))
+                    else: colours.append((255, 255, 255))
+
+                if self.input[0]:
+                    self.selected_menu_option -= 1
+                    self.input[0] = False
+                if self.input[1]:
+                    self.selected_menu_option += 1
+                    self.input[1] = False
+
+                self.selected_menu_option = self.selected_menu_option % 3
+
+                if self.menu == 'title':
+                    # title
+                    self.display.blit(self.font.render('Trackmorph', True, (255, 255, 255)), (340 - 117 / 2, 120))
+
+                    if self.input[4]:
+                        if self.selected_menu_option == 0:
+                            self.game_state = 'playing'
+                            self.initialise()
+                        if self.selected_menu_option == 1:
+                            self.menu = 'options'
+                        if self.selected_menu_option == 2:
+                            pygame.quit()
+                            sys.exit()
+
+                        self.selected_menu_option = 0
+                        self.input = [False, False, False, False, False, False]
+
+                    self.display.blit(self.small_font.render('Play', True, colours[0]), (340 - 12 / 2, 170))
+                    self.display.blit(self.small_font.render('Change Resolution', True, colours[1]), (340 - 100 / 2, 200))
+                    self.display.blit(self.small_font.render('Quit', True, colours[2]), (340 - 12 / 2, 230))
+                if self.menu == 'options':
+                    #all ****s are out the window, im just writing the sloppiest of sloppy joe codes imaginable. thank GOD im never gonna have to touch this codebase again soon
+                    if self.input[4]:
+                        self.menu = 'title'
+                        if self.selected_menu_option == 0:
+                            self.resolution_scale = 1
+                        if self.selected_menu_option == 1:
+                            self.resolution_scale = 2
+                        if self.selected_menu_option == 2:
+                            self.resolution_scale = 3
+
+                        self.window = pygame.display.set_mode((640 * self.resolution_scale, 360 * self.resolution_scale))
+
+                        self.selected_menu_option = 0
+                        self.input = [False, False, False, False, False, False]
+
+                    self.display.blit(self.font.render('Resolution', True, (255, 255, 255)), (340 - 80 / 2, 120))
+
+                    self.display.blit(self.small_font.render('360p', True, colours[0]), (340 - 2 / 2, 170))
+                    self.display.blit(self.small_font.render('720p', True, colours[1]), (340 - 2 / 2, 200))
+                    self.display.blit(self.small_font.render('1080p', True, colours[2]), (340 - 10 / 2, 230))
+
             #the time trial
-            if self.game_state == 'playing':
+            elif self.game_state == 'playing':
                 #offroad speed penalty
                 max_speed = self.car_speed
                 self.is_offroad = False
@@ -329,13 +401,14 @@ class Game:
 
                         pygame.draw.circle(self.display, (203, 219, 252), ghost_pos, 8)
 
-                for offroad in self.offroads[self.lap - 1]:
-                    pygame.draw.rect(self.display, (0, 100, 0), (offroad.x - self.car_pos.x + 340, offroad.y - self.car_pos.y + 180, offroad.width, offroad.height))
+                if self.debug:
+                    for offroad in self.offroads[self.lap - 1]:
+                        pygame.draw.rect(self.display, (0, 100, 0), (offroad.x - self.car_pos.x + 340, offroad.y - self.car_pos.y + 180, offroad.width, offroad.height))
 
-                for wall in self.walls[self.lap - 1]:
-                    pygame.draw.line(self.display, (0, 0, 255),
-                                     (-self.car_pos.x + 340 + wall[0][0], - self.car_pos.y + 180 + wall[0][1]),
-                                     (-self.car_pos.x + 340 + wall[1][0], -self.car_pos.y + 180 + wall[1][1]))
+                    for wall in self.walls[self.lap - 1]:
+                        pygame.draw.line(self.display, (0, 0, 255),
+                                         (-self.car_pos.x + 340 + wall[0][0], - self.car_pos.y + 180 + wall[0][1]),
+                                         (-self.car_pos.x + 340 + wall[1][0], -self.car_pos.y + 180 + wall[1][1]))
 
                 check = 0
                 for checkpoint in self.checkpoints[self.lap - 1]:
@@ -356,10 +429,11 @@ class Game:
                                     self.input = [False, False, False, False, False, False]
                                     self.saved_ghost = False
                                     break
-
-                        pygame.draw.line(self.display, (255, 0, 255), (-self.car_pos.x + 340 + checkpoint[0][0], - self.car_pos.y + 180 + checkpoint[0][1]), (-self.car_pos.x + 340 + checkpoint[1][0], -self.car_pos.y + 180 + checkpoint[1][1]))
+                        if self.debug:
+                            pygame.draw.line(self.display, (255, 0, 255), (-self.car_pos.x + 340 + checkpoint[0][0], - self.car_pos.y + 180 + checkpoint[0][1]), (-self.car_pos.x + 340 + checkpoint[1][0], -self.car_pos.y + 180 + checkpoint[1][1]))
                     else:
-                        pygame.draw.line(self.display, (255, 0, 0), (-self.car_pos.x + 340 + checkpoint[0][0], - self.car_pos.y + 180 + checkpoint[0][1]), (-self.car_pos.x + 340 + checkpoint[1][0], -self.car_pos.y + 180 + checkpoint[1][1]))
+                        if self.debug:
+                            pygame.draw.line(self.display, (255, 0, 0), (-self.car_pos.x + 340 + checkpoint[0][0], - self.car_pos.y + 180 + checkpoint[0][1]), (-self.car_pos.x + 340 + checkpoint[1][0], -self.car_pos.y + 180 + checkpoint[1][1]))
                     check += 1
 
                 #pygame.draw.rect(self.display, (0, 255, 0), self.car_rect)
