@@ -4,10 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="30188c2c-e540-4d1d-b59e-cffd32e3ca20" name="Changes" comment="doing stuff">
+    <list default="true" id="30188c2c-e540-4d1d-b59e-cffd32e3ca20" name="Changes" comment="error crashed my pc so backing up to github thumbs up emoji 100 emoji">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/game.py" beforeDir="false" afterPath="$PROJECT_DIR$/game.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/track.txt" beforeDir="false" afterPath="$PROJECT_DIR$/track.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/track_lap2.ase" beforeDir="false" afterPath="$PROJECT_DIR$/track_lap2.ase" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/track_lap2.png" beforeDir="false" afterPath="$PROJECT_DIR$/track_lap2.png" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -106,7 +108,15 @@
       <option name="project" value="LOCAL" />
       <updated>1754065478553</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="error crashed my pc so backing up to github thumbs up emoji 100 emoji">
+      <option name="closed" value="true" />
+      <created>1754115191301</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1754115191301</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -115,6 +125,7 @@
     <MESSAGE value="did a few more things before sleep but honestly i forgor" />
     <MESSAGE value="new track, numbers, the whole lot" />
     <MESSAGE value="doing stuff" />
-    <option name="LAST_COMMIT_MESSAGE" value="doing stuff" />
+    <MESSAGE value="error crashed my pc so backing up to github thumbs up emoji 100 emoji" />
+    <option name="LAST_COMMIT_MESSAGE" value="error crashed my pc so backing up to github thumbs up emoji 100 emoji" />
   </component>
 </project>

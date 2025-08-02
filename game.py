@@ -1,4 +1,5 @@
 import math
+import os.path
 
 import pygame
 import sys
@@ -19,12 +20,16 @@ class Game:
         self.track_img = [pygame.image.load('track.png').convert(), pygame.image.load('track_lap2.png').convert()]
         self.track_file = open('track.txt', 'r')
 
+        self.game_state = 'playing'
+        self.animation_tick = 0
+
         readmode = None
         writing_lap = 0
         self.checkpoints = list()
         self.walls = list()
         walls = list()
         checkpoints = list()
+        self.max_laps = 1
         for line in self.track_file.readlines():
             if line.startswith('checkpoints'):
                 readmode = 0
@@ -38,6 +43,7 @@ class Game:
                 self.walls.append(walls)
                 checkpoints = list()
                 walls = list()
+                self.max_laps += 1
             else:
                 if readmode == 0:
                     line_ = line.split(' ')
@@ -45,7 +51,6 @@ class Game:
                     point_two = (int(line_[2].strip()), int(line_[3].strip()))
 
                     checkpoints.append((point_one, point_two))
-                    print(writing_lap)
                 elif readmode == 1:
                     line_ = line.split(' ')
                     point_one = (int(line_[0].strip()), int(line_[1].strip()))
@@ -53,11 +58,10 @@ class Game:
 
                     walls.append((point_one, point_two))
 
-        print(self.walls)
-
         self.current_checkpoint = 0
         self.lap = 1
         self.time = 0
+        self.best_time = None
         self.displayed_time = 0
 
         self.car_img = pygame.image.load('car.png').convert()
@@ -73,25 +77,71 @@ class Game:
         self.drift_amount = 0
         self.drift_boosts = [75, 140, 200]
 
+        self.ghost_data = list()
+        self.best_ghost = None
+        self.ghost_tick = 0
+
+        if os.path.isfile('ghost.txt'):
+            with open('ghost.txt', 'r') as file:
+                self.best_ghost = list()
+                for line in file.readlines():
+                    data = line.split(' ')
+
+                    self.best_ghost.append(Vector2(float(data[0].strip()), float(data[1].strip())))
+                print(self.best_ghost)
+
+
         self.boost_ui = pygame.image.load('boost.png').convert()
         self.boost_ui.set_colorkey((0, 222, 255))
 
         #             accel, decel, left , right, drift, item
         self.input = [False, False, False, False, False, False]
 
+        self.flag_animation = pygame.image.load('flag.png').convert()
+        self.flag_animation.set_colorkey((0, 222, 255))
+
+        self.font = pygame.font.SysFont('Arial', 20)
+        self.small_font = pygame.font.SysFont('Arial', 12)
+
+    def initialise(self):
+        self.animation_tick = 0
+        self.ghost_tick = 0
+
+        self.current_checkpoint = 0
+        self.lap = 1
+        self.time = 0
+        self.displayed_time = 0
+
+        self.car_pos = Vector2(509, 1251)
+        self.old_car_pos = Vector2(509, 1251)
+        self.car_vel = 0
+        self.car_speed = 4
+        self.car_handle = 1.5
+        self.car_dir = -35
+        self.car_rect = pygame.Rect(0, 0, 16, 16)
+        self.drift_amount = 0
+        self.drift_boosts = [75, 140, 200]
+
+        self.ghost_data = list()
+
     def run(self):
         while True:
             #timer
             if self.clock.get_time() > 0 and self.clock.get_fps() > 0:
                 #increment by .016 because the game is locked to 60fps so this should count seconds
-                self.time += .016666666
+                if self.game_state == 'playing':
+                    self.time += .016666666
+
+                self.animation_tick += 1
+
                 #awful code to make the displayed timer always show the tens digit in seconds, breaks for one frame but i dont care enough to fix
                 if self.time % 60 < 10:
                     self.displayed_time = f'{int(self.time / 60)}:{f'0{'%.3f'%(self.time % 60)}'}'
                 else:
                     self.displayed_time = f'{int(self.time / 60)}:{'%.3f'%(self.time % 60)}'
-            self.display.fill((0, 0, 0))
+            #self.display.fill((0, 0, 0))
             pygame.display.set_caption(f'trackmorph | lap {self.lap} | time {self.displayed_time} | fps: {int(self.clock.get_fps())}')
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -122,156 +172,223 @@ class Game:
                         self.input[4] = False
                     if event.key == pygame.K_LCTRL:
                         self.input[5] = False
+                    if event.key == pygame.K_e:
+                        self.game_state = 'finished'
+                        self.animation_tick = 0
 
-            #if not drifting // if no direction is held while trying to start drift (give grace if attempting to drift just before selecting direction)
-            if not self.input[4] or turn_dir == 0:
-                if self.drift_amount > self.drift_boosts[2]:
-                    #print('beeg boost')
-                    self.car_vel = -(self.car_speed + 5)
-                elif self.drift_amount > self.drift_boosts[1]:
-                    #print('mid boost')
-                    self.car_vel = -(self.car_speed + 3.6)
-                elif self.drift_amount > self.drift_boosts[0]:
-                    #print('smol boost')
-                    self.car_vel = -(self.car_speed + 2.8)
+            #the time trial
+            if self.game_state == 'playing':
+                #if not drifting // if no direction is held while trying to start drift (give grace if attempting to drift just before selecting direction)
+                if not self.input[4] or turn_dir == 0:
+                    if self.drift_amount > self.drift_boosts[2]:
+                        #print('beeg boost')
+                        self.car_vel = -(self.car_speed + 5)
+                    elif self.drift_amount > self.drift_boosts[1]:
+                        #print('mid boost')
+                        self.car_vel = -(self.car_speed + 3.6)
+                    elif self.drift_amount > self.drift_boosts[0]:
+                        #print('smol boost')
+                        self.car_vel = -(self.car_speed + 2.8)
 
-                move = 0
-                turn_dir = 0
-                self.drift_amount = 0
+                    move = 0
+                    turn_dir = 0
+                    self.drift_amount = 0
 
-                #if key w, move up
-                if self.input[0] and not self.input[1]:
-                    move -= 1
-                #if key s, move down
-                elif self.input[1] and not self.input[0]:
-                    move += 1
-                #if key a, turn left
-                if self.input[2]:
-                    turn_dir += 1
-                #if key s, turn right
-                if self.input[3]:
-                    turn_dir -= 1
+                    #if key w, move up
+                    if self.input[0] and not self.input[1]:
+                        move -= 1
+                    #if key s, move down
+                    elif self.input[1] and not self.input[0]:
+                        move += 1
+                    #if key a, turn left
+                    if self.input[2]:
+                        turn_dir += 1
+                    #if key s, turn right
+                    if self.input[3]:
+                        turn_dir -= 1
 
-                turn_amount = turn_dir
-            # if drifting pause inputs
-            elif self.input[4] and move == -1:
-                turn_amount = turn_dir
+                    turn_amount = turn_dir
+                # if drifting pause inputs
+                elif self.input[4] and move == -1:
+                    turn_amount = turn_dir
 
-                if self.input[2]:
-                    turn_amount += 0.4
-                if self.input[3]:
-                     turn_amount -= 0.4
+                    if self.input[2]:
+                        turn_amount += 0.4
+                    if self.input[3]:
+                         turn_amount -= 0.4
 
-                #increase drift bonus depending on how tight the drift is
-                #inside drift
-                if abs(turn_amount) > 1:
-                    self.drift_amount += 3
-                #outside drift
-                elif abs(turn_amount) < 1:
-                    self.drift_amount += 1
-                #regular drift
+                    #increase drift bonus depending on how tight the drift is
+                    #inside drift
+                    if abs(turn_amount) > 1:
+                        self.drift_amount += 3
+                    #outside drift
+                    elif abs(turn_amount) < 1:
+                        self.drift_amount += 1
+                    #regular drift
+                    else:
+                        self.drift_amount += 2
+
+                #turn car based on turn_dir
+                self.car_dir += (self.car_handle * (self.car_vel / self.car_speed)) * (turn_dir * abs(turn_amount))
+
+                #accelerate and decelerate
+                if move != 0:
+                    self.car_vel += 0.2 * move
                 else:
-                    self.drift_amount += 2
+                    #slow car
+                    if self.car_vel >= 0.1:
+                        self.car_vel -= 0.06
+                    elif self.car_vel <= -0.1:
+                        self.car_vel += 0.06
+                    #if velocity is too low, just stop velocity
+                    else:
+                        self.car_vel = 0
 
-            #turn car based on turn_dir
-            self.car_dir += (self.car_handle * (self.car_vel / self.car_speed)) * (turn_dir * abs(turn_amount))
+                if self.input[5]:
+                    self.input[5] = False
+                    self.car_vel = -(self.car_speed + 6)
 
-            #accelerate and decelerate
-            if move != 0:
-                self.car_vel += 0.2 * move
-            else:
-                #slow car
-                if self.car_vel >= 0.1:
-                    self.car_vel -= 0.06
-                elif self.car_vel <= -0.1:
-                    self.car_vel += 0.06
-                #if velocity is too low, just stop velocity
+                #cap speed
+                #reverse cap
+                if self.car_vel > self.car_speed / 2.5:
+                    self.car_vel -= 0.3
+                #regular cap
+                elif self.car_vel < -self.car_speed:
+                    self.car_vel += 0.3
+
+                #wall collisions
+                collide = False
+                for wall in self.walls[self.lap - 1]:
+                    if self.car_rect.clipline(wall[0], wall[1]):
+                        collide = True
+
+                if collide:
+                    self.car_vel = -self.car_vel + (-0 * move)
+                    self.car_pos.x -= (self.car_vel * math.sin(math.radians(self.car_dir))) * 2
+                    self.car_pos.y += (self.car_vel * math.cos(math.radians(self.car_dir))) * 2
                 else:
-                    self.car_vel = 0
+                    #move car based on velocity and direction
+                    self.car_pos.x -= (self.car_vel * math.sin(math.radians(self.car_dir)))
+                    self.car_pos.y += (self.car_vel * math.cos(math.radians(self.car_dir)))
 
-            if self.input[5]:
-                self.input[5] = False
-                self.car_vel = -(self.car_speed + 6)
+                self.car_rect = pygame.Rect(self.car_pos.x - 8, self.car_pos.y - 8, 16, 16)
 
-            #cap speed
-            #reverse cap
-            if self.car_vel > self.car_speed / 2.5:
-                self.car_vel -= 0.3
-            #regular cap
-            elif self.car_vel < -self.car_speed:
-                self.car_vel += 0.3
+                car_img = pygame.transform.rotate(self.car_img, -self.car_dir)
 
-            #wall collisions
-            collide = False
-            for wall in self.walls[self.lap - 1]:
-                if self.car_rect.clipline(wall[0], wall[1]):
-                    collide = True
+                self.display.blit(self.track_img[self.lap - 1], (-self.car_pos.x + 340, -self.car_pos.y + 180))
+                car_img_rect = car_img.get_rect()
+                car_img_rect.x = 340 - car_img.get_width() / 2
+                car_img_rect.y = 180 - car_img.get_height() / 2
+                car_rect = pygame.Rect(340 - 8, 180 - 8, 16, 16)
 
-            if collide:
-                self.car_vel = -self.car_vel + (-0 * move)
-                self.car_pos.x -= (self.car_vel * math.sin(math.radians(self.car_dir))) * 2
-                self.car_pos.y += (self.car_vel * math.cos(math.radians(self.car_dir))) * 2
-            else:
-                #move car based on velocity and direction
-                self.car_pos.x -= (self.car_vel * math.sin(math.radians(self.car_dir)))
-                self.car_pos.y += (self.car_vel * math.cos(math.radians(self.car_dir)))
+                #arbitarary ghost cutoff point (i think this is like 2m:30s)
+                if self.animation_tick < 9000:
+                    if self.animation_tick % 2 == 0:
+                        self.ghost_data.append(self.car_pos.copy())
+                        self.ghost_tick += 1
 
-            self.car_rect = pygame.Rect(self.car_pos.x - 8, self.car_pos.y - 8, 16, 16)
+                    if self.best_ghost != None:
 
-            car_img = pygame.transform.rotate(self.car_img, -self.car_dir)
+                        if self.ghost_tick >= len(self.best_ghost):
+                            self.ghost_tick = len(self.best_ghost) - 1
 
-            self.display.blit(self.track_img[self.lap - 1], (-self.car_pos.x + 340, -self.car_pos.y + 180))
-            car_img_rect = car_img.get_rect()
-            car_img_rect.x = 340 - car_img.get_width() / 2
-            car_img_rect.y = 180 - car_img.get_height() / 2
-            car_rect = pygame.Rect(340 - 8, 180 - 8, 16, 16)
+                        ghost_pos = (self.best_ghost[self.ghost_tick][0] -self.car_pos.x + 340, self.best_ghost[self.ghost_tick][1] -self.car_pos.y + 180)
 
-            check = 0
-            for checkpoint in self.checkpoints[self.lap - 1]:
-                #check for checkpoint collisions
-                if self.car_rect.clipline(checkpoint[0], checkpoint[1]):
-                    #if the checkpoint we hit is 1 bigger than our current checkpoint (or first checkpoint and we on last)
-                    #update our current checkpoint
-                    if check == (self.current_checkpoint + 1) % len(self.checkpoints[self.lap - 1]):
-                        self.current_checkpoint = check
-                        #if we hit the first checkpoint, update the lap
-                        if check == 0:
-                            self.lap += 1
+                        pygame.draw.circle(self.display, (203, 219, 252), ghost_pos, 8)
 
-                    pygame.draw.line(self.display, (255, 0, 255), (-self.car_pos.x + 340 + checkpoint[0][0], - self.car_pos.y + 180 + checkpoint[0][1]), (-self.car_pos.x + 340 + checkpoint[1][0], -self.car_pos.y + 180 + checkpoint[1][1]))
-                else:
-                    pygame.draw.line(self.display, (255, 0, 0), (-self.car_pos.x + 340 + checkpoint[0][0], - self.car_pos.y + 180 + checkpoint[0][1]), (-self.car_pos.x + 340 + checkpoint[1][0], -self.car_pos.y + 180 + checkpoint[1][1]))
-                check += 1
+                for wall in self.walls[self.lap - 1]:
+                    pygame.draw.line(self.display, (0, 0, 255),
+                                     (-self.car_pos.x + 340 + wall[0][0], - self.car_pos.y + 180 + wall[0][1]),
+                                     (-self.car_pos.x + 340 + wall[1][0], -self.car_pos.y + 180 + wall[1][1]))
 
-            for wall in self.walls[self.lap - 1]:
-                pygame.draw.line(self.display, (0, 0, 255),
-                                 (-self.car_pos.x + 340 + wall[0][0], - self.car_pos.y + 180 + wall[0][1]),
-                                 (-self.car_pos.x + 340 + wall[1][0], -self.car_pos.y + 180 + wall[1][1]))
+                check = 0
+                for checkpoint in self.checkpoints[self.lap - 1]:
+                    #check for checkpoint collisions
+                    if self.car_rect.clipline(checkpoint[0], checkpoint[1]):
+                        #if the checkpoint we hit is 1 bigger than our current checkpoint (or first checkpoint and we on last)
+                        #update our current checkpoint
+                        if check == (self.current_checkpoint + 1) % len(self.checkpoints[self.lap - 1]):
+                            self.current_checkpoint = check
+                            #if we hit the first checkpoint, update the lap
+                            if check == 0:
+                                self.lap += 1
 
-            #pygame.draw.rect(self.display, (0, 255, 0), self.car_rect)
-            #pygame.draw.rect(self.display, (255, 255, 0), car_rect)
-            self.display.blit(car_img, (340 - car_img.get_size()[0] / 2, 180 - car_img.get_size()[1] / 2))
+                                if self.lap >= self.max_laps:
+                                    self.game_state = 'finished'
+                                    self.animation_tick = 0
+                                    self.input = [False, False, False, False, False, False]
+                                    break
 
-            #drift ui
-            if self.input[4]:
-                drift_ui = pygame.Rect(340 - 30, 180 - 30, 10, 3)
+                        pygame.draw.line(self.display, (255, 0, 255), (-self.car_pos.x + 340 + checkpoint[0][0], - self.car_pos.y + 180 + checkpoint[0][1]), (-self.car_pos.x + 340 + checkpoint[1][0], -self.car_pos.y + 180 + checkpoint[1][1]))
+                    else:
+                        pygame.draw.line(self.display, (255, 0, 0), (-self.car_pos.x + 340 + checkpoint[0][0], - self.car_pos.y + 180 + checkpoint[0][1]), (-self.car_pos.x + 340 + checkpoint[1][0], -self.car_pos.y + 180 + checkpoint[1][1]))
+                    check += 1
 
-                drift_ui.width = self.drift_amount / 4
-                if drift_ui.width > 60:
-                    drift_ui.width = 60
+                #pygame.draw.rect(self.display, (0, 255, 0), self.car_rect)
+                #pygame.draw.rect(self.display, (255, 255, 0), car_rect)
+                self.display.blit(car_img, (340 - car_img.get_size()[0] / 2, 180 - car_img.get_size()[1] / 2))
 
-                if self.drift_amount > self.drift_boosts[2]:
-                    drift_ui_colour = (255, 0, 0)
-                elif self.drift_amount > self.drift_boosts[1]:
-                    drift_ui_colour = (0, 255, 0)
-                elif self.drift_amount > self.drift_boosts[0]:
-                    drift_ui_colour = (0, 0, 255)
-                else:
-                    drift_ui_colour = (100, 100, 100)
+                #drift ui
+                if self.input[4]:
+                    drift_ui = pygame.Rect(340 - 30, 180 - 30, 10, 3)
 
-                pygame.draw.rect(self.display, drift_ui_colour, drift_ui)
+                    drift_ui.width = self.drift_amount / 4
+                    if drift_ui.width > 60:
+                        drift_ui.width = 60
 
-            #self.display.blit(self.boost_ui, (25, 25))
+                    if self.drift_amount > self.drift_boosts[2]:
+                        drift_ui_colour = (255, 0, 0)
+                    elif self.drift_amount > self.drift_boosts[1]:
+                        drift_ui_colour = (0, 255, 0)
+                    elif self.drift_amount > self.drift_boosts[0]:
+                        drift_ui_colour = (0, 0, 255)
+                    else:
+                        drift_ui_colour = (100, 100, 100)
+
+                    pygame.draw.rect(self.display, drift_ui_colour, drift_ui)
+
+                #self.display.blit(self.boost_ui, (25, 25))
+            #finished race
+            elif self.game_state == 'finished':
+                pygame.draw.rect(self.display, (255, 255, 255), pygame.Rect(255, 135, 170, 90))
+                pygame.draw.rect(self.display, (0, 0, 0), pygame.Rect(260, 140, 160, 80))
+
+                flag_animation = (int(self.animation_tick / 6)) % 6
+                if self.animation_tick >= 0:
+                    self.display.blit(pygame.transform.flip(self.flag_animation, True, False), (262 + 26, 142), (1, 18 * flag_animation, 21, 18))
+                    self.display.blit(self.flag_animation, (344 + 26, 142), (0, 18 * flag_animation, 21, 18))
+                    self.display.blit(self.font.render('Done!', True, (255, 255, 255)), (284 + 26, 141))
+                if self.animation_tick > 20:
+                    self.display.blit(self.small_font.render(f'> Time: {self.displayed_time}', True, (255, 255, 255)), (262, 142 + 20))
+                if self.animation_tick > 40:
+                    if self.best_time == None:
+                        self.display.blit(self.small_font.render(f'> Best: No best time.', True, (255, 255, 255)), (262, 142 + 20 + 12))
+                    elif self.best_time < self.time:
+                        if self.best_time % 60 < 10:
+                            displayed_time = f'{int(self.best_time / 60)}:{f'0{'%.3f' % (self.best_time % 60)}'}'
+                        else:
+                            displayed_time = f'{int(self.best_time / 60)}:{'%.3f' % (self.best_time % 60)}'
+
+                        self.display.blit(self.small_font.render(f'> Best: {displayed_time}', True, (255, 255, 255)), (262, 142 + 20 + 12))
+                    elif self.best_time > self.time:
+                        self.display.blit(self.small_font.render(f'> Best: New best time!', True, (255, 255, 255)), (262, 142 + 20 + 12))
+                if self.animation_tick > 80:
+                    self.display.blit(self.small_font.render('Press W to try again.', True, (255, 255, 255)), (262, 142 + 60))
+
+                    if self.input[0]:
+                        if self.best_time == None or self.best_time > self.time:
+                            self.best_time = self.time
+                            self.best_ghost = self.ghost_data
+
+                            with open('ghost.txt', 'w') as file:
+                                lines_to_write = list()
+                                for line in self.ghost_data:
+                                    lines_to_write.append(f'{line[0]} {line[1]}\n')
+                                file.writelines(lines_to_write)
+
+                        self.initialise()
+
+                        self.game_state = 'playing'
 
             screen = pygame.transform.scale(self.display, (640 * self.resolution_scale, 360 * self.resolution_scale))
             self.window.blit(screen, (0, 0))
