@@ -21,7 +21,7 @@ class Game:
             'content/track_lap2.png').convert(), pygame.image.load('content/track_lap3.png').convert()]
         self.track_file = open('content/track.txt', 'r')
 
-        self.menu_background = pygame.image.load('test_map.png').convert()
+        self.menu_background = pygame.image.load('content/test_map.png').convert()
         self.selected_menu_option = 0
         self.menu = 'title'
 
