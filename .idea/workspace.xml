@@ -4,7 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="30188c2c-e540-4d1d-b59e-cffd32e3ca20" name="Changes" comment="the game is done" />
+    <list default="true" id="30188c2c-e540-4d1d-b59e-cffd32e3ca20" name="Changes" comment="forgor this one">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/game.py" beforeDir="false" afterPath="$PROJECT_DIR$/game.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -147,7 +150,23 @@
       <option name="project" value="LOCAL" />
       <updated>1754220655216</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="the game is donr fr now no cap. no audio because i cant be bothered">
+      <option name="closed" value="true" />
+      <created>1754220880568</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1754220880568</updated>
+    </task>
+    <task id="LOCAL-00012" summary="forgor this one">
+      <option name="closed" value="true" />
+      <created>1754221895516</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1754221895516</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -161,6 +180,8 @@
     <MESSAGE value="we offroading on this ui. bro im cooked its 4am" />
     <MESSAGE value="menus!" />
     <MESSAGE value="the game is done" />
-    <option name="LAST_COMMIT_MESSAGE" value="the game is done" />
+    <MESSAGE value="the game is donr fr now no cap. no audio because i cant be bothered" />
+    <MESSAGE value="forgor this one" />
+    <option name="LAST_COMMIT_MESSAGE" value="forgor this one" />
   </component>
 </project>

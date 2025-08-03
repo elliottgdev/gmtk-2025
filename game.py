@@ -203,9 +203,6 @@ class Game:
                         self.input[4] = False
                     if event.key == pygame.K_LCTRL:
                         self.input[5] = False
-                    if event.key == pygame.K_e:
-                        self.game_state = 'finished'
-                        self.animation_tick = 0
 
             #menu
             if self.game_state == 'menu':
