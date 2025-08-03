@@ -4,11 +4,17 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="30188c2c-e540-4d1d-b59e-cffd32e3ca20" name="Changes" comment="we offroading on this ui. bro im cooked its 4am">
+    <list default="true" id="30188c2c-e540-4d1d-b59e-cffd32e3ca20" name="Changes" comment="menus!">
+      <change afterPath="$PROJECT_DIR$/content/ui.png" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/boost.png" beforeDir="false" afterPath="$PROJECT_DIR$/content/boost.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/car.png" beforeDir="false" afterPath="$PROJECT_DIR$/content/car.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flag.png" beforeDir="false" afterPath="$PROJECT_DIR$/content/flag.png" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/game.py" beforeDir="false" afterPath="$PROJECT_DIR$/game.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_map.png" beforeDir="false" afterPath="$PROJECT_DIR$/test_map.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui.png" beforeDir="false" afterPath="$PROJECT_DIR$/ui.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/track.png" beforeDir="false" afterPath="$PROJECT_DIR$/content/track.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/track.txt" beforeDir="false" afterPath="$PROJECT_DIR$/content/track.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/track_lap2.png" beforeDir="false" afterPath="$PROJECT_DIR$/content/track_lap2.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui.png" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -52,6 +58,11 @@
     &quot;last_opened_file_path&quot;: &quot;/home/elliott/Software/level_editor_modded&quot;
   }
 }</component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/content" />
+    </key>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -131,7 +142,15 @@
       <option name="project" value="LOCAL" />
       <updated>1754158013703</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="menus!">
+      <option name="closed" value="true" />
+      <created>1754162286620</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1754162286620</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -143,6 +162,7 @@
     <MESSAGE value="error crashed my pc so backing up to github thumbs up emoji 100 emoji" />
     <MESSAGE value="ghouls n ghosts buts its game loop and ghosts" />
     <MESSAGE value="we offroading on this ui. bro im cooked its 4am" />
-    <option name="LAST_COMMIT_MESSAGE" value="we offroading on this ui. bro im cooked its 4am" />
+    <MESSAGE value="menus!" />
+    <option name="LAST_COMMIT_MESSAGE" value="menus!" />
   </component>
 </project>

@@ -11,14 +11,15 @@ class Game:
     def __init__(self):
         pygame.init()
 
-        self.resolution_scale = 3
+        self.resolution_scale = 2
         self.window = pygame.display.set_mode((640 * self.resolution_scale, 360 * self.resolution_scale))
         self.display = pygame.Surface((640, 360))
         pygame.display.set_caption('trackmorph')
         self.clock = pygame.time.Clock()
 
-        self.track_img = [pygame.image.load('track.png').convert(), pygame.image.load('track_lap2.png').convert()]
-        self.track_file = open('track.txt', 'r')
+        self.track_img = [pygame.image.load('content/track.png').convert(), pygame.image.load(
+            'content/track_lap2.png').convert(), pygame.image.load('content/track_lap3.png').convert()]
+        self.track_file = open('content/track.txt', 'r')
 
         self.menu_background = pygame.image.load('test_map.png').convert()
         self.selected_menu_option = 0
@@ -83,7 +84,7 @@ class Game:
         self.lap_ui_tick = -1
         self.lap_position = 370
 
-        self.car_img = pygame.image.load('car.png').convert()
+        self.car_img = pygame.image.load('content/car.png').convert()
         self.car_img.set_colorkey((0, 222, 255))
 
         self.car_pos = Vector2(509, 1251)
@@ -96,6 +97,7 @@ class Game:
         self.drift_amount = 0
         self.drift_boosts = [75, 140, 200]
         self.is_offroad = False
+        self.boosts = 3
 
         self.ghost_data = list()
         self.best_ghost = None
@@ -115,18 +117,18 @@ class Game:
                         self.best_ghost.append(Vector2(float(data[0].strip()), float(data[1].strip())))
                     line_ += 1
 
-        self.boost_ui = pygame.image.load('boost.png').convert()
+        self.boost_ui = pygame.image.load('content/boost.png').convert()
         self.boost_ui.set_colorkey((0, 222, 255))
 
         #             accel, decel, left , right, drift, item
         self.input = [False, False, False, False, False, False]
 
-        self.flag_animation = pygame.image.load('flag.png').convert()
+        self.flag_animation = pygame.image.load('content/flag.png').convert()
         self.flag_animation.set_colorkey((0, 222, 255))
 
         self.font = pygame.font.SysFont('Arial', 20)
         self.small_font = pygame.font.SysFont('Arial', 12)
-        self.ui_atlas = pygame.image.load('ui.png').convert()
+        self.ui_atlas = pygame.image.load('content/ui.png').convert()
         self.ui_atlas.set_colorkey((0, 222, 255))
 
     def initialise(self):
@@ -148,6 +150,8 @@ class Game:
         self.car_rect = pygame.Rect(0, 0, 16, 16)
         self.drift_amount = 0
         self.drift_boosts = [75, 140, 200]
+        self.is_offroad = False
+        self.boosts = 3
 
         self.ghost_data = list()
 
@@ -287,13 +291,16 @@ class Game:
                 if not self.input[4] or turn_dir == 0 or self.is_offroad:
                     if self.drift_amount > self.drift_boosts[2]:
                         #print('beeg boost')
-                        self.car_vel = -(self.car_speed + 5)
+                        if self.car_vel > -(self.car_speed + 5):
+                            self.car_vel = -(self.car_speed + 5)
                     elif self.drift_amount > self.drift_boosts[1]:
                         #print('mid boost')
-                        self.car_vel = -(self.car_speed + 3.6)
+                        if self.car_vel > -(self.car_speed + 3.6):
+                            self.car_vel = -(self.car_speed + 3.6)
                     elif self.drift_amount > self.drift_boosts[0]:
                         #print('smol boost')
-                        self.car_vel = -(self.car_speed + 2.8)
+                        if self.car_vel > -(self.car_speed + 2.8):
+                            self.car_vel = -(self.car_speed + 2.8)
 
                     move = 0
                     turn_dir = 0
@@ -332,7 +339,6 @@ class Game:
                     #regular drift
                     else:
                         self.drift_amount += 2
-                print(turn_dir)
 
                 #turn car based on turn_dir
                 self.car_dir += (self.car_handle * (self.car_vel / self.car_speed)) * (turn_dir * abs(turn_amount))
@@ -350,9 +356,10 @@ class Game:
                     else:
                         self.car_vel = 0
 
-                if self.input[5]:
+                if self.input[5] and self.boosts > 0:
                     self.input[5] = False
                     self.car_vel = -(self.car_speed + 6)
+                    self.boosts -= 1
 
                 #cap speed
                 #reverse cap
@@ -476,6 +483,10 @@ class Game:
                             self.lap_position = 290
                     else:
                         self.lap_position += 2
+
+                    #boosts
+                    if self.boosts > 0:
+                        self.display.blit(self.ui_atlas, (25, 360 - 25 - 48), (208, 144 + (48 * (self.boosts - 1)), 224, 48))
 
                     #timer
                     self.display.blit(self.ui_atlas, (640 - 25 - 288, 25), (144, 0, 288, 48))
